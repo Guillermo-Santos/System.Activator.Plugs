@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Linq;
+using System.Runtime.CompilerServices;
 using Cosmos.Core;
 using IL2CPU.API;
 using IL2CPU.API.Attribs;
@@ -11,10 +12,22 @@ namespace CosmosKernel4.Plugs
     {
         public unsafe static T CreateInstance<T>()
         {
+            return (T)Activator.CreateInstance(typeof(T))!;
+        }
+
+        public unsafe static object CreateInstance(Type type)
+        {
             // Object Allocation
-            var ctr = (CosmosRuntimeType)typeof(T);
+            var ctr = (CosmosRuntimeType)type;
             var mType = VTablesImpl.mTypes[ctr.mTypeId];
-            var dSize = mType.Size;
+            var gcType = VTablesImpl.gcTypes[ctr.mTypeId];
+
+            uint dSize = 0;
+            for (int i = 0; i < gcType.GCFieldTypes.Length; i++)
+            {
+                dSize += VTablesImpl.GetSize(gcType.GCFieldTypes[i]);
+            }
+
             var ptr = GCImplementation.AllocNewObject(dSize + ObjectUtils.FieldDataOffset);
 
             // Set Fields
@@ -24,11 +37,12 @@ namespace CosmosKernel4.Plugs
             vptr[2] = dSize;        // Data Area Size
 
             // Ctor Call
-            T obj = Unsafe.Read<T>(vptr)!;
+            var obj = Unsafe.Read<object>(vptr)!;
             var cctor = (delegate*<object, void>)mType.MethodAddresses[0];
             cctor(obj);
 
             return obj;
         }
+
     }
 }
