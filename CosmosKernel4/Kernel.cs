@@ -10,19 +10,24 @@ namespace CosmosKernel4
 
         protected override void BeforeRun()
         {
+            Console.Clear();
             // Dummy Invocation, Cosmos does not include uncalled methods of types and as everyone knows, ctors are methods...xd
             // Maybe an option should be added so that you can decide if you want the all the ctors of referenced types.
-            (new MyGuiWriter()).WriteText("Cosmos booted successfully. Type a line of text to get it echoed back.");
+            var dummy = new MyGuiWriter();
+            dummy.WriteText("Cosmos booted successfully. Type a line of text to get it echoed back.");
+            dummy.WriteText(dummy.Ram);
+            var dummy2 = new MyOtherWriter();
+            dummy2.WriteText("Cosmos booted successfully. Type a line of text to get it echoed back.");
         }
 
         protected override unsafe void Run()
         {
             //Console.ReadKey();
-            Console.SetCursorPosition(0, 0);
+            Console.SetCursorPosition(0, 3);
             var input = "asdasdasd";
 
             //IWriter bazService = new MyGuiWriter();
-            IWriter bazService = Get<MyGuiWriter>();
+            IWriter bazService = (MyOtherWriter)Activator.CreateInstance(typeof(MyOtherWriter));
             bazService.WriteText((bazService.Text is null).ToString());
             bazService.WriteText(bazService.Text);
             bazService.WriteText(bazService.GetType().Name);
@@ -31,8 +36,8 @@ namespace CosmosKernel4
             Console.WriteLine("Free RAM: {0}/{1}", GCImplementation.GetAvailableRAM(), CPU.GetAmountOfRAM());
             Console.Write("Used RAM: {0}", GCImplementation.GetUsedRAM());
 
-            //Heap.Free(GCImplementation.GetPointer(bazService));
-            Heap.Collect();
+            Heap.Free(GCImplementation.GetPointer(bazService));
+            //Heap.Collect();
             //Thread.Sleep(1000);
         }
 
@@ -69,6 +74,30 @@ namespace CosmosKernel4
         public void WriteText(string text)
         {
             Console.WriteLine(text);
+        }
+    }
+
+    internal class MyOtherWriter : IWriter
+    {
+        private readonly IWriter writer;
+
+        public string Text => writer.Text;
+
+
+
+        public MyOtherWriter() : this(Kernel.Get<MyGuiWriter>())
+        {
+            
+        }
+
+        public MyOtherWriter(IWriter writer)
+        {
+            this.writer = writer;
+        }
+
+        public void WriteText(string text)
+        {
+            writer.WriteText(text);
         }
     }
 }
