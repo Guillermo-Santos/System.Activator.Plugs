@@ -21,6 +21,7 @@
         <OptimizationLevel>2</OptimizationLevel>
         <ExtractMapFile>True</ExtractMapFile>
         <TraceMode>Cosmos</TraceMode>
+        <AllowComments>True</AllowComments>
     </PropertyGroup>
 
     <ItemGroup>
