@@ -19,7 +19,10 @@ namespace CosmosKernel4
             var dummy2 = new MyOtherWriter();
             dummy2.WriteText("Cosmos booted successfully. Type a line of text to get it echoed back.");
             var dummy3 = new Artesa();
-            dummy.WriteText(string.Format("Struc value: ", dummy3.are));
+            dummy.WriteText(string.Format("Struc value: {0} {1}", dummy3.are, dummy3.are2));
+            var dummy4 = Activator.CreateInstance<Artesa>();
+            Cosmos.Debug.Kernel.Debugger.DoBochsBreak();
+            dummy.WriteText(string.Format("Struc value: {0} {1}", dummy4.are, dummy4.are2));
             Console.ReadKey();
         }
 
@@ -35,7 +38,7 @@ namespace CosmosKernel4
             bazService.WriteText(bazService.Text);
             bazService.WriteText(bazService.GetType().Name);
             bazService.WriteText(string.Format("Text typed: {0}", input));
-            Console.WriteLine(Activator.CreateInstance<Artesa>().are);
+            Console.WriteLine(string.Format("Struc value: {0}", Activator.CreateInstance<Artesa>().are));
             Console.SetCursorPosition(0, 23);
             Console.WriteLine("Free RAM: {0}/{1}", GCImplementation.GetAvailableRAM(), CPU.GetAmountOfRAM());
             Console.Write("Used RAM: {0}", GCImplementation.GetUsedRAM());
@@ -57,8 +60,10 @@ namespace CosmosKernel4
         {
             Console.WriteLine("LOL");
             are = "asds";
+            are2 = "asds";
         }
         public string are { get; }
+        public string are2 { get; }
     }
     public interface IWriter
     {

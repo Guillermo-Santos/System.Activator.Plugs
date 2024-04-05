@@ -16,7 +16,45 @@ namespace CosmosKernel4.Plugs
     {
         public unsafe static T CreateInstance<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>()
         {
-            return (T)Activator.CreateInstance(typeof(T))!;
+            // Object Allocation
+            var ctr = (CosmosRuntimeType)typeof(T);
+            var mType = VTablesImpl.mTypes[ctr.mTypeId];
+            var gcType = VTablesImpl.gcTypes[ctr.mTypeId];
+
+            uint dSize = (ctr.IsValueType) ? 0u : ObjectUtils.FieldDataOffset;
+            for (int i = 0; i < gcType.GCFieldTypes.Length; i++)
+            {
+                dSize += VTablesImpl.GetSize(gcType.GCFieldTypes[i]);
+            }
+
+            var ptr = GCImplementation.AllocNewObject(dSize);
+
+            // Set Fields
+            var vptr = (uint*)ptr;
+            if (!ctr.IsValueType)
+            {
+                vptr[0] = ctr.mTypeId;  // Type
+                vptr[1] = ptr;          // Address/Handler?
+                vptr[2] = mType.Size;        // Data Area Size
+            }
+            var obj = Unsafe.Read<T>(vptr)!;
+            var ctoraddress = mType.MethodAddresses[0];
+
+            if (ctr.IsValueType)
+            {
+                // Struct Ctor Call
+                var cctor = (delegate*<T*, void>)ctoraddress;
+                cctor(&obj);
+            }
+            else
+            {
+                // Object Ctor Call
+                var cctor = (delegate*<T, void>)ctoraddress;
+                cctor(obj);
+            }
+
+            return obj;
+            //return (T)Activator.CreateInstance(typeof(T))!;
         }
 
         public unsafe static object CreateInstance([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type)
@@ -26,7 +64,7 @@ namespace CosmosKernel4.Plugs
             var mType = VTablesImpl.mTypes[ctr.mTypeId];
             var gcType = VTablesImpl.gcTypes[ctr.mTypeId];
 
-            uint dSize = ObjectUtils.FieldDataOffset;
+            uint dSize = (ctr.IsValueType) ? 0u : ObjectUtils.FieldDataOffset;
             for (int i = 0; i < gcType.GCFieldTypes.Length; i++)
             {
                 dSize += VTablesImpl.GetSize(gcType.GCFieldTypes[i]);
@@ -38,14 +76,14 @@ namespace CosmosKernel4.Plugs
             var vptr = (uint*)ptr;
             vptr[0] = ctr.mTypeId;  // Type
             vptr[1] = ptr;          // Address/Handler?
-            vptr[2] = dSize;        // Data Area Size
+            vptr[2] = mType.Size;        // Data Area Size
             var obj = Unsafe.Read<object>(vptr)!;
             var ctoraddress = mType.MethodAddresses[0];
 
             if (ctr.IsValueType)
             {
                 // Struct Ctor Call
-                var cctor = (delegate*<void*, void>)ctoraddress;
+                var cctor = (delegate*<uint*, void>)ctoraddress;
                 cctor(vptr);
             }
             else

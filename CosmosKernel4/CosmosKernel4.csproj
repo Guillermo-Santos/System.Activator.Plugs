@@ -22,6 +22,8 @@
         <ExtractMapFile>True</ExtractMapFile>
         <TraceMode>Cosmos</TraceMode>
         <AllowComments>True</AllowComments>
+        <EnableBochsDebug>False</EnableBochsDebug>
+        <StartBochsDebugGui>False</StartBochsDebugGui>
     </PropertyGroup>
 
     <ItemGroup>
