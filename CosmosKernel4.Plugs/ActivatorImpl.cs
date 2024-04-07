@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Cosmos.Core;
 using IL2CPU.API;
@@ -19,8 +20,10 @@ namespace CosmosKernel4.Plugs
             return (T)Activator.CreateInstance(typeof(T))!;
         }
 
-        public unsafe static object CreateInstance([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] CosmosRuntimeType ctr)
+        public unsafe static object CreateInstance(CosmosRuntimeType ctr, bool nonPublic, bool wrapExceptions)
         {
+            ArgumentNullException.ThrowIfNull(ctr, "Type");
+
             // Object Allocation
             var mType = VTablesImpl.mTypes[ctr.mTypeId];
             var gcType = VTablesImpl.gcTypes[ctr.mTypeId];
@@ -49,23 +52,29 @@ namespace CosmosKernel4.Plugs
             vptr[2] = mType.Size;   // Data Area Size
 
             object obj = Unsafe.Read<object>(vptr)!;
-
             var ctoraddress = mType.MethodAddresses[0];
 
-            if (ctr.IsValueType)
+            try
             {
-                // Struct Ctor Call
-                var cctor = (delegate*<void*, void>)ctoraddress;
-                cctor(vptr + 3); // Struct pointer
-            }
-            else
-            {
-                // Object Ctor Call
-                var cctor = (delegate*<object, void>)ctoraddress;
-                cctor(obj);
-            }
+                if (ctr.IsValueType)
+                {
+                    // Struct Ctor Call
+                    var cctor = (delegate*<void*, void>)ctoraddress;
+                    cctor(vptr + 3); // Struct pointer
+                }
+                else
+                {
+                    // Object Ctor Call
+                    var cctor = (delegate*<object, void>)ctoraddress;
+                    cctor(obj);
+                }
 
-            return obj;
+                return obj;
+            }
+            catch(Exception inner) when (wrapExceptions) 
+            {
+                throw new TargetInvocationException(inner);
+            }
         }
     }
 }
