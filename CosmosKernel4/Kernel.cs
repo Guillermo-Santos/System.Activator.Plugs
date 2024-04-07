@@ -20,10 +20,13 @@ namespace CosmosKernel4
             dummy2.WriteText("Cosmos booted successfully. Type a line of text to get it echoed back.");
             var dummy3 = new Artesa();
             dummy.WriteText(string.Format("Struc value: {0} {1}", dummy3.are, dummy3.are2));
-            var dummy4 = Activator.CreateInstance<Artesa>();
-            Cosmos.Debug.Kernel.Debugger.DoBochsBreak();
+            var dummy4 = (Artesa)Activator.CreateInstance(typeof(Artesa))!;
+            //var dummy4 = (Artesa)Activator.CreateInstance<Artesa>();
+            //Cosmos.Debug.Kernel.Debugger.DoBochsBreak();
+            Console.WriteLine(dummy4.GetType().AssemblyQualifiedName);
             dummy.WriteText(string.Format("Struc value: {0} {1}", dummy4.are, dummy4.are2));
             Console.ReadKey();
+            Console.Clear();
         }
 
         protected override unsafe void Run()
@@ -34,6 +37,7 @@ namespace CosmosKernel4
 
             //IWriter bazService = new MyGuiWriter();
             IWriter bazService = (MyOtherWriter)Activator.CreateInstance(typeof(MyOtherWriter));
+            //IWriter bazService = Activator.CreateInstance<MyOtherWriter>();
             bazService.WriteText((bazService.Text is null).ToString());
             bazService.WriteText(bazService.Text);
             bazService.WriteText(bazService.GetType().Name);
@@ -74,6 +78,7 @@ namespace CosmosKernel4
     {
         public MyGuiWriter(string text, string ram)
         {
+            Console.WriteLine($"{text} {ram}");
             Text = text;
             Ram = ram;
         }
@@ -112,6 +117,7 @@ namespace CosmosKernel4
         public MyOtherWriter(IWriter writer)
         {
             this.writer = writer;
+            Console.WriteLine("Done!");
         }
 
         public void WriteText(string text)
