@@ -20,6 +20,8 @@ namespace CosmosKernel4.Plugs
             return (T)Activator.CreateInstance(typeof(T))!;
         }
 
+        // nonPublic is ignored since, at the moment, we cannot know if a ctor is public or not
+        // and we would get a Stack Corruption or Null reference exception if the ctor is not present either way.
         public unsafe static object CreateInstance(CosmosRuntimeType ctr, bool nonPublic, bool wrapExceptions)
         {
             ArgumentNullException.ThrowIfNull(ctr, "Type");
